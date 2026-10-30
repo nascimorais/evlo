@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Amor.exe — Sistema do Coração</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Canvas Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body {
+            background-color: #020610;
+            color: #f8fafc;
+            font-family: 'Inter', sans-serif;
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Container do Fundo com a Imagem/Cenário */
+        .sky-background-container {
+            position: fixed;
+            inset: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .sky-background-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center;
+        }
+
+        /* Canvas de Bolinhas Brancas Luminosas Flutuando */
+        #particles-canvas {
+            position: fixed;
+            inset: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 2;
+        }
+
+        /* Card Central Clean Glassmorphism */
+        .glass-panel {
+            background: rgba(10, 15, 30, 0.72);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8), 0 0 30px rgba(255, 255, 255, 0.05);
+        }
+
+        /* Janela Clássica / Retro do Windows */
+        .win-popup {
+            position: absolute;
+            width: 320px;
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.28);
+            border-radius: 8px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.9), 0 0 25px rgba(255, 255, 255, 0.15);
+            animation: popupSpawn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+            z-index: 50;
+        }
+
+        @keyframes popupSpawn {
+            0% { transform: scale(0.7) translateY(12px); opacity: 0; }
+            100% { transform: scale(1) translateY(0); opacity: 1; }
+        }
+
+        .win-header {
+            background: linear-gradient(90deg, #1e293b 0%, #0f172a 100%);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            border-top-left-radius: 7px;
+            border-top-right-radius: 7px;
+            padding: 8px 12px;
+            cursor: move;
+        }
+
+        .glow-btn {
+            box-shadow: 0 0 25px rgba(255, 255, 255, 0.25);
+            transition: all 0.3s ease;
+        }
+
+        .glow-btn:hover {
+            box-shadow: 0 0 35px rgba(255, 255, 255, 0.5);
+            transform: translateY(-2px);
+        }
+
+        .shake-effect {
+            animation: shake 0.3s ease-in-out;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translate(0, 0); }
+            20% { transform: translate(-4px, 4px); }
+            40% { transform: translate(4px, -4px); }
+            60% { transform: translate(-2px, -2px); }
+            80% { transform: translate(2px, 2px); }
+        }
+    </style>
+</head>
+<body class="relative flex items-center justify-center min-h-screen w-screen overflow-hidden">
+
+    <!-- Fundo da Imagem do Cenário (Sky: Children of the Light) -->
+    <div class="sky-background-container" id="bg-container">
+        <svg id="sky-bg-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 562" preserveAspectRatio="xMidYMid slice" class="w-full h-full">
+            <defs>
+                <linearGradient id="bgNight" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" stop-color="#02040b"/>
+                    <stop offset="60%" stop-color="#060c1c"/>
+                    <stop offset="100%" stop-color="#020610"/>
+                </linearGradient>
+
+                <filter id="superGlow" x="-50%" y="-50%" width="200%" height="200%">
+                    <feGaussianBlur stdDeviation="6" result="blur1" />
+                    <feGaussianBlur stdDeviation="16" result="blur2" />
+                    <feMerge>
+                        <feMergeNode in="blur2" />
+                        <feMergeNode in="blur1" />
+                        <feMergeNode in="SourceGraphic" />
+                    </feMerge>
+                </filter>
+            </defs>
+
+            <!-- Fundo Céu Noturno -->
+            <rect width="1000" height="562" fill="url(#bgNight)"/>
+
+            <!-- Montanhas / Nuvens ao Fundo -->
+            <path d="M 120,240 C 220,130 380,110 500,160 C 640,100 780,120 900,210 C 1000,290 960,430 830,460 C 680,480 280,480 130,430 C 30,390 30,290 120,240 Z" fill="#0b172a" opacity="0.95"/>
+            <path d="M 200,250 C 300,170 420,150 520,190 C 630,140 750,160 850,240 C 920,310 850,420 720,430 C 480,450 300,430 200,390 C 100,350 120,290 200,250 Z" fill="#11223b" opacity="0.6"/>
+
+            <!-- Árvore com Galhos Azuis Luminosos -->
+            <g stroke="#1d4ed8" stroke-linecap="round" fill="none">
+                <path d="M -30,10 C 170,50 290,120 540,220" stroke-width="30"/>
+                <path d="M 200,100 C 300,40 430,20 560,30" stroke-width="14"/>
+                <path d="M 360,150 C 440,190 540,170 630,210" stroke-width="10"/>
+            </g>
+            <g stroke="#3b82f6" stroke-linecap="round" fill="none" opacity="0.85">
+                <path d="M -20,10 C 170,50 290,120 540,220" stroke-width="16"/>
+                <path d="M 200,100 C 300,40 430,20 560,30" stroke-width="7"/>
+            </g>
+
+            <!-- Mesa com Bule e Xícara -->
+            <g transform="translate(250, 410)">
+                <rect x="0" y="60" width="180" height="30" fill="#030814" rx="4"/>
+                <!-- Bule de Chá -->
+                <path d="M 60,30 C 40,30 30,45 30,60 L 110,60 C 110,45 100,30 80,30 Z" fill="#0f2b5c" stroke="#2563eb" stroke-width="2"/>
+                <path d="M 30,40 C 15,35 15,55 30,55" fill="none" stroke="#2563eb" stroke-width="3"/>
+                <path d="M 110,45 Q 130,25 135,40 C 125,48 112,50 110,50 Z" fill="#0f2b5c" stroke="#2563eb" stroke-width="1.5"/>
+            </g>
+
+            <!-- PERSONAGEM 1 (Esquerda - Figura Branca Brilhante com Chifres/Cabelo Longo) -->
+            <g filter="url(#superGlow)" fill="#ffffff">
+                <path d="M -50,290 C 10,230 70,210 110,270 C 140,310 170,380 180,470 L -90,470 Z"/>
+                <path d="M 110,270 C 90,190 50,150 10,120 C 40,160 70,210 90,270 Z"/>
+                <path d="M 110,270 C 140,210 170,170 220,150 C 180,190 150,230 130,280 Z"/>
+            </g>
+
+            <!-- PERSONAGEM 2 (Direita - Figura Branca Brilhante Sentada) -->
+            <g filter="url(#superGlow)" fill="#ffffff">
+                <path d="M 470,270 C 510,220 570,230 590,280 C 610,330 620,390 630,470 L 430,470 C 440,410 450,330 470,270 Z"/>
+                <path d="M 515,240 L 495,185 L 535,220 Z"/>
+                <path d="M 545,240 L 575,190 L 555,225 Z"/>
+            </g>
+        </svg>
+    </div>
+
+    <!-- Canvas para Bolinhas Brancas Luminosas Flutuantes -->
+    <canvas id="particles-canvas"></canvas>
+
+    <!-- Botão Discreto de Trocar Fundo se desejar -->
+    <div class="fixed top-4 right-4 z-20">
+        <label class="px-3.5 py-2 rounded-full bg-slate-900/70 hover:bg-slate-900 text-slate-200 text-xs font-mono border border-white/20 backdrop-blur-md cursor-pointer transition flex items-center gap-2 shadow-lg">
+            <i class="fa-solid fa-image text-sky-400"></i>
+            <span>Trocar Fundo</span>
+            <input type="file" id="bg-upload" accept="image/*" class="hidden" onchange="uploadCustomBg(event)">
+        </label>
+    </div>
+
+    <!-- Container Principal Clean -->
+    <main class="relative z-10 p-6 max-w-md w-full mx-4 text-center">
+        <div class="glass-panel p-8 sm:p-10 rounded-3xl">
+            
+            <div class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-white/10 border border-white/20 text-white text-xs font-mono mb-6">
+                <span class="w-2 h-2 rounded-full bg-white animate-ping"></span>
+                <span>AMOR.EXE ATIVO</span>
+            </div>
+
+            <h1 class="font-serif text-3xl sm:text-4xl font-semibold tracking-wide text-white mb-3 drop-shadow-md">
+                Para o Meu Amor
+            </h1>
+            <p class="text-slate-300 text-sm sm:text-base font-light mb-8 leading-relaxed">
+                Clique no botão abaixo para testar o sistema do coração.
+            </p>
+
+            <button id="start-btn" onclick="startLoveSpam()" class="w-full py-4 px-8 rounded-2xl bg-white/15 hover:bg-white/25 text-white border border-white/30 font-semibold text-base tracking-wide glow-btn flex items-center justify-center gap-3 active:scale-95 transition cursor-pointer backdrop-blur-md">
+                <i class="fa-solid fa-heart text-pink-300 animate-pulse"></i>
+                <span>Disparar Avisos de Amor</span>
+            </button>
+
+            <div id="progress-container" class="mt-6 hidden">
+                <div class="flex justify-between text-xs text-slate-300 font-mono mb-2">
+                    <span id="status-label">Processando sentimentos...</span>
+                    <span id="counter-label">0/10 fechadas</span>
+                </div>
+                <div class="w-full bg-slate-950/70 rounded-full h-2 overflow-hidden border border-white/20">
+                    <div id="progress-bar" class="bg-gradient-to-r from-sky-300 via-pink-300 to-white h-full w-0 transition-all duration-300"></div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Modal Final -->
+    <div id="final-modal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+        <div class="glass-panel max-w-md w-full p-8 rounded-3xl text-center border border-pink-500/30 transform scale-95 transition duration-300">
+            <div class="w-16 h-16 rounded-full bg-pink-500/20 text-pink-400 text-3xl flex items-center justify-center mx-auto mb-4 border border-pink-500/30">
+                <i class="fa-solid fa-heart animate-bounce"></i>
+            </div>
+            <h2 class="text-2xl sm:text-3xl font-bold text-white mb-3">Diagnóstico Concluído!</h2>
+            <p class="text-slate-200 text-sm sm:text-base leading-relaxed mb-6 font-light">
+                Não importa quantas janelas de erro você feche, meu amor por você continua rodando em segundo plano para sempre! ❤️✨
+            </p>
+            <button onclick="restartApp()" class="px-8 py-3 bg-gradient-to-r from-pink-500 to-rose-600 hover:from-pink-400 hover:to-rose-500 text-white font-semibold rounded-full shadow-lg transition active:scale-95 cursor-pointer">
+                Reiniciar Amor.exe 💕
+            </button>
+        </div>
+    </div>
+
+    <!-- Container das Popups Flutuantes -->
+    <div id="popups-container" class="fixed inset-0 pointer-events-none z-40"></div>
+
+    <script>
+        // Bolinhas Brancas Luminosas Flutuantes
+        function initAnimatedParticles() {
+            const canvas = document.getElementById('particles-canvas');
+            const ctx = canvas.getContext('2d');
+
+            function resizeCanvas() {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            }
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+
+            const numParticles = 70;
+            const particles = [];
+
+            for (let i = 0; i < numParticles; i++) {
+                particles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    radius: Math.random() * 2.8 + 1,
+                    alpha: Math.random() * 0.8 + 0.2,
+                    speedAlpha: (Math.random() * 0.015 + 0.005) * (Math.random() < 0.5 ? 1 : -1),
+                    vx: (Math.random() - 0.5) * 0.5,
+                    vy: (Math.random() - 0.5) * 0.5 - 0.3
+                });
+            }
+
+            function animateParticles() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                particles.forEach(p => {
+                    p.x += p.vx;
+                    p.y += p.vy;
+
+                    p.alpha += p.speedAlpha;
+                    if (p.alpha <= 0.15 || p.alpha >= 0.95) {
+                        p.speedAlpha = -p.speedAlpha;
+                    }
+
+                    if (p.x < 0) p.x = canvas.width;
+                    if (p.x > canvas.width) p.x = 0;
+                    if (p.y < 0) p.y = canvas.height;
+                    if (p.y > canvas.height) p.y = 0;
+
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = `rgba(255, 255, 255, ${p.alpha})`;
+                    ctx.shadowColor = 'rgba(255, 255, 255, 0.95)';
+                    ctx.shadowBlur = 10;
+                    ctx.fill();
+                    ctx.restore();
+                });
+
+                requestAnimationFrame(animateParticles);
+            }
+
+            animateParticles();
+        }
+
+        // Upload de imagem personalizada
+        function uploadCustomBg(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const container = document.getElementById('bg-container');
+                    container.innerHTML = `<img src="${e.target.result}" class="w-full h-full object-cover">`;
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        // Mensagens românticas do estilo "Não Respondendo" do Windows
+        const loveMessages = [
+            { title: "Erro do Sistema - Não Respondendo", msg: "Eu te amo! O meu coração travou de tanto amor por você. ❤️", icon: "fa-heart text-rose-400" },
+            { title: "Amor.exe Não Respondendo", msg: "O processo amor_infinito.exe parou de responder de tanta saudade.", icon: "fa-triangle-exclamation text-amber-300" },
+            { title: "Erro 404: Limites Não Encontrados", msg: "Não existe nenhum limite para o tamanho do carinho que sinto por você!", icon: "fa-circle-xmark text-pink-400" },
+            { title: "Alerta Crítico!", msg: "Aviso: O nível de amor atingiu 100%. Ação irreversível! 💕", icon: "fa-shield-heart text-sky-300" },
+            { title: "Windows - Memória Transbordando", msg: "Memória cheia com momentos lindos ao seu lado.", icon: "fa-microchip text-indigo-300" },
+            { title: "Aviso do Sistema", msg: "Detectado: Você é a minha pessoa favorita em todo o universo!", icon: "fa-sparkles text-amber-200" },
+            { title: "Impossível Fechar", msg: "Tentando fechar esta janela? Erro: Impossível parar de te amar!", icon: "fa-lock text-emerald-300" },
+            { title: "Conexão do Coração", msg: "Sinal de amor em 100%. Conectados para sempre.", icon: "fa-wifi text-cyan-300" },
+            { title: "Notificação Urgente", msg: "Lembrete: Você é o meu maior presente! ✨", icon: "fa-bell text-yellow-300" },
+            { title: "Falha Fatal de Saudade", msg: "Sistema reiniciado apenas para te mandar mil beijos! 💋", icon: "fa-rotate text-rose-300" }
+        ];
+
+        let spawnedCount = 0;
+        let closedCount = 0;
+        const totalToSpawn = 10;
+        let isSpawning = false;
+
+        function startLoveSpam() {
+            if (isSpawning) return;
+            isSpawning = true;
+
+            document.getElementById('start-btn').classList.add('opacity-50', 'pointer-events-none');
+            document.getElementById('progress-container').classList.remove('hidden');
+            
+            spawnedCount = 0;
+            closedCount = 0;
+            updateProgress();
+
+            const interval = setInterval(() => {
+                if (spawnedCount < totalToSpawn) {
+                    createWindow(loveMessages[spawnedCount]);
+                    spawnedCount++;
+                } else {
+                    clearInterval(interval);
+                }
+            }, 260);
+        }
+
+        function createWindow(item) {
+            const container = document.getElementById('popups-container');
+            const popup = document.createElement('div');
+            popup.className = 'win-popup pointer-events-auto shake-effect';
+
+            const padding = 20;
+            const maxX = Math.max(10, window.innerWidth - 340);
+            const maxY = Math.max(10, window.innerHeight - 220);
+
+            const randomX = Math.floor(Math.random() * maxX) + padding;
+            const randomY = Math.floor(Math.random() * maxY) + padding;
+
+            popup.style.left = `${randomX}px`;
+            popup.style.top = `${randomY}px`;
+
+            popup.innerHTML = `
+                <div class="win-header flex items-center justify-between">
+                    <div class="flex items-center gap-2 text-xs font-mono text-slate-300 truncate max-w-[220px]">
+                        <i class="fa-solid ${item.icon}"></i>
+                        <span>${item.title}</span>
+                    </div>
+                    <button onclick="closeWindow(this)" class="w-5 h-5 rounded flex items-center justify-center text-slate-400 hover:text-white hover:bg-rose-600/80 text-xs transition cursor-pointer">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+
+                <div class="p-4 flex flex-col gap-4">
+                    <div class="flex items-start gap-3">
+                        <div class="text-2xl mt-0.5 shrink-0">
+                            <i class="fa-solid ${item.icon}"></i>
+                        </div>
+                        <p class="text-sm text-slate-200 font-sans leading-relaxed">
+                            ${item.msg}
+                        </p>
+                    </div>
+
+                    <div class="flex justify-end gap-2 pt-2 border-t border-slate-800">
+                        <button onclick="closeWindow(this)" class="px-3 py-1.5 rounded text-xs font-mono bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition cursor-pointer">
+                            OK
+                        </button>
+                        <button onclick="closeWindow(this, true)" class="px-3 py-1.5 rounded text-xs font-mono bg-sky-600 hover:bg-sky-500 text-white font-medium transition cursor-pointer">
+                            Te Amo Tambem ❤️
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            makeDraggable(popup);
+            container.appendChild(popup);
+        }
+
+        function closeWindow(buttonEl, isLoveExtra = false) {
+            const popup = buttonEl.closest('.win-popup');
+            if (!popup) return;
+
+            popup.style.transform = 'scale(0.85)';
+            popup.style.opacity = '0';
+            popup.style.transition = 'all 0.15s ease';
+
+            setTimeout(() => {
+                popup.remove();
+                closedCount++;
+                updateProgress();
+
+                if (isLoveExtra) {
+                    confetti({
+                        particleCount: 25,
+                        spread: 60,
+                        origin: { y: 0.7 }
+                    });
+                }
+
+                if (closedCount >= totalToSpawn) {
+                    finishSpam();
+                }
+            }, 150);
+        }
+
+        function updateProgress() {
+            const progressBar = document.getElementById('progress-bar');
+            const counterLabel = document.getElementById('counter-label');
+            const percentage = Math.min(100, Math.round((closedCount / totalToSpawn) * 100));
+
+            progressBar.style.width = `${percentage}%`;
+            counterLabel.innerText = `${closedCount}/${totalToSpawn} fechadas`;
+        }
+
+        function finishSpam() {
+            confetti({
+                particleCount: 120,
+                spread: 100,
+                origin: { y: 0.5 }
+            });
+
+            document.getElementById('final-modal').classList.remove('hidden');
+        }
+
+        function restartApp() {
+            document.getElementById('final-modal').classList.add('hidden');
+            document.getElementById('start-btn').classList.remove('opacity-50', 'pointer-events-none');
+            document.getElementById('progress-container').classList.add('hidden');
+            isSpawning = false;
+        }
+
+        function makeDraggable(element) {
+            const header = element.querySelector('.win-header');
+            let isDragging = false;
+            let offsetX = 0, offsetY = 0;
+
+            header.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                offsetX = e.clientX - element.offsetLeft;
+                offsetY = e.clientY - element.offsetTop;
+                element.style.zIndex = '100';
+            });
+
+            document.addEventListener('mousemove', (e) => {
+                if (!isDragging) return;
+                element.style.left = `${e.clientX - offsetX}px`;
+                element.style.top = `${e.clientY - offsetY}px`;
+            });
+
+            document.addEventListener('mouseup', () => {
+                isDragging = false;
+            });
+
+            header.addEventListener('touchstart', (e) => {
+                const touch = e.touches[0];
+                isDragging = true;
+                offsetX = touch.clientX - element.offsetLeft;
+                offsetY = touch.clientY - element.offsetTop;
+                element.style.zIndex = '100';
+            });
+
+            document.addEventListener('touchmove', (e) => {
+                if (!isDragging) return;
+                const touch = e.touches[0];
+                element.style.left = `${touch.clientX - offsetX}px`;
+                element.style.top = `${touch.clientY - offsetY}px`;
+            });
+
+            document.addEventListener('touchend', () => {
+                isDragging = false;
+            });
+        }
+
+        window.onload = function() {
+            initAnimatedParticles();
+        };
+    </script>
+</body>
+</html>
